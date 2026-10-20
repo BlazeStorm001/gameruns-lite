@@ -16,7 +16,7 @@ usage() {
   cat <<EOF
 Usage:
   $0 --install   Install pinned harness dependencies locally
-  $0 --check     Verify the local installation without changing it
+  $0 --check     Verify the local installation
 EOF
 }
 

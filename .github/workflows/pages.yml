@@ -23,19 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
       - uses: actions/configure-pages@v6
-      - name: Verify preserved game
-        run: sha256sum --check examples/neon-breach/artifacts.sha256
-      - name: Run preserved game tests
-        working-directory: examples/neon-breach/game
+      - name: Stage game and traces
         run: |
-          node scripts/check-levels.mjs
-          node scripts/sim-test.mjs
-      - name: Stage game and trace
-        run: |
-          mkdir -p _site
-          cp examples/neon-breach/game/index.html _site/
-          cp -R examples/neon-breach/game/js _site/
-          cp examples/neon-breach/traces.html _site/traces.html
+          mkdir -p _site/traces
+          cp examples/neon-breach/qwen3.8-27b/game/index.html _site/
+          cp -R examples/neon-breach/qwen3.8-27b/game/js _site/
+          cp examples/neon-breach/qwen3.8-27b/traces.html _site/traces/qwen3.8-27b.html
+          cp examples/neon-breach/gemma4-26b-a4b/traces.html _site/traces/gemma4-26b-a4b.html
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

@@ -48,6 +48,7 @@ mkdir -p \
   "$workspace/scripts"
 
 cp "$harness_root/extensions/"*.ts "$workspace/.pi/extensions/"
+cp -R "$harness_root/extensions/game-test" "$workspace/.pi/extensions/"
 cp "$scenario_root/prompts/"*.txt "$workspace/prompts/"
 cp "$harness_root/scripts/generate-image.sh" "$workspace/scripts/"
 

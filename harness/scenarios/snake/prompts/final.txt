@@ -1,0 +1,7 @@
+Perform final validation and delivery of the Snake game. Focus on finding and fixing remaining defects, not adding new scope.
+
+Run the documented automated tests. Open or reload the actual running game and verify start, keyboard movement and turning, food/growth, collisions/game over, pause/resume, restart, visible score, and readable rendering. Use game_test and/or Playwright MCP and request screenshots at useful checkpoints. Check browser errors. Verify normal real-time play, not only test hooks.
+
+Fix failures you can reproduce and rerun affected checks. Ensure README launch instructions name the correct port and working test commands. Record what was actually tested and any remaining limitations. Never claim an unrun check passed. Manage only your own processes and keep changes inside this workspace.
+
+If this prompt repeats, use the available time to strengthen evidence and address remaining failures rather than restarting development or rewriting working code.

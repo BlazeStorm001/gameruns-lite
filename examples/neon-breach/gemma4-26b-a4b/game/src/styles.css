@@ -1,0 +1,108 @@
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #050505;
+    color: #00ffff;
+    font-family: 'Courier New', Courier, monospace;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+#game-container {
+    position: relative;
+    box-shadow: 0 0 20px #00ffff;
+    border: 2px solid #004444;
+}
+
+canvas {
+    display: block;
+    background-color: #000;
+}
+
+#ui-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#health-bar-container {
+    width: 200px;
+    height: 20px;
+    border: 2px solid #00ffff;
+    background-color: rgba(0, 255, 255, 0.1);
+}
+
+#health-bar {
+    width: 100%;
+    height: 100%;
+    background-color: #00ffff;
+    transition: width 0.3s ease;
+}
+
+#ammo-counter, #objective-text, #score-container, #objective-container, #combo-container {
+    position: absolute;
+    text-shadow: 0 0 5px #00ffff;
+    font-weight: bold;
+}
+
+#ammo-counter {
+    bottom: 20px;
+    left: 20px;
+}
+
+#objective-text {
+    top: 20px;
+    left: 20px;
+    font-size: 1.2em;
+}
+
+#score-container {
+    top: 20px;
+    right: 20px;
+}
+
+#objective-container {
+    top: 50px;
+    right: 20px;
+}
+
+#combo-container {
+    top: 80px;
+    right: 20px;
+    font-size: 1.5em;
+    color: #ff00ff;
+    text-shadow: 0 0 10px #ff00ff;
+}
+
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    pointer-events: auto;
+}
+
+#overlay h1 {
+    font-size: 4em;
+    margin-bottom: 0;
+    color: #00ffff;
+    text-shadow: 0 0 20px #00ffff;
+}
+
+#overlay p {
+    font-size: 1.5em;
+}

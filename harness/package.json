@@ -1,5 +1,5 @@
 {
-  "name": "neon-breach-eval-harness",
+  "name": "game-harness",
   "private": true,
   "version": "1.0.0",
   "type": "module",

@@ -4,17 +4,38 @@ set -Eeuo pipefail
 harness_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 repo_root="$(cd -- "$harness_root/.." && pwd)"
 scenario=""
+provider="llama-cpp"
+model=""
+url="http://127.0.0.1:8080/v1"
 
 usage() {
-  echo "Usage: $0 --scenario PATH" >&2
+  cat >&2 <<EOF
+Usage:
+  $0 --scenario PATH --model ID [--provider NAME] [--base-url URL]
+EOF
 }
 
 while (( $# > 0 )); do
   case "$1" in
     --scenario)
       shift
-      [[ $# -gt 0 ]] || { usage; exit 2; }
+      [[ $# -gt 0 ]] || { echo "--scenario requires a value" >&2; exit 2; }
       scenario="$1"
+      ;;
+    --provider)
+      shift
+      [[ $# -gt 0 ]] || { echo "--provider requires a value" >&2; exit 2; }
+      provider="$1"
+      ;;
+    --model)
+      shift
+      [[ $# -gt 0 ]] || { echo "--model requires a value" >&2; exit 2; }
+      model="$1"
+      ;;
+    --base-url)
+      shift
+      [[ $# -gt 0 ]] || { echo "--base-url requires a value" >&2; exit 2; }
+      url="$1"
       ;;
     -h|--help)
       usage
@@ -28,16 +49,17 @@ while (( $# > 0 )); do
   shift
 done
 
-[[ -n "$scenario" ]] || { usage; exit 2; }
+[[ -n "$scenario" ]] || { echo "--scenario PATH is required." >&2; exit 2; }
+[[ -d "$scenario" ]] || { echo "Scenario directory not found: $scenario" >&2; exit 2; }
+[[ -n "$model" ]] || { echo "--model ID is required." >&2; exit 2; }
+[[ -n "$provider" ]] || { echo "--provider must not be empty." >&2; exit 2; }
+[[ -n "$url" ]] || { echo "--base-url must not be empty." >&2; exit 2; }
+scenario="$(realpath "$scenario")"
+url="${url%/}"
 
 "$harness_root/scripts/setup.sh" --check >/dev/null
 
-provider="${PI_PROVIDER:-llama-cpp}"
-model="${PI_MODEL:-qwen}"
-url="${LLAMA_URL:-http://127.0.0.1:8080/v1}"
-url="${url%/}"
 pi_bin="$harness_root/node_modules/.bin/pi"
-
 models_json="$(curl -fsS "$url/models")" || {
   echo "Cannot reach the model endpoint: $url/models" >&2
   exit 1

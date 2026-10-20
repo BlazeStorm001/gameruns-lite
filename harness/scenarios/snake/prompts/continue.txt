@@ -1,0 +1,5 @@
+Continue improving the Snake game autonomously. Inspect the current code and actual running browser game, identify the most important unfinished behavior or defect, implement a focused improvement, and test it.
+
+Exercise real transitions: start, movement and turning, food/growth, collision/game over, pause/resume, and restart. Use game_test snapshots and screenshots as evidence; reload after editing browser code. Add or run automated tests, fix failures, and check that ordinary real-time keyboard play still works after using test hooks.
+
+Keep the implementation small and finishable. Avoid unnecessary features or dependencies. Manage only processes you started; do not use broad pkill commands. Keep work inside this workspace. Do not merely review or claim success without executing checks.

@@ -1,21 +1,23 @@
 # Minimal Agentic Game Development Harness
 
-A minimal harness around the Pi coding agent for long-running autonomous simple browser-game development. The bundled NEON BREACH case study is a complete browser game created by a local Qwen3.8-27B model in a single nine-hour run.
+A minimal harness around the Pi coding agent for long-running autonomous browser-game development with locally hosted models.
 
-[![Deploy game to GitHub Pages](https://github.com/BlazeStorm001/game-harness/actions/workflows/pages.yml/badge.svg)](https://github.com/BlazeStorm001/game-harness/actions/workflows/pages.yml)
+[![Deploy Game](https://github.com/BlazeStorm001/game-harness/actions/workflows/pages.yml/badge.svg)](https://github.com/BlazeStorm001/game-harness/actions/workflows/pages.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 ## Why
 
-Evaluating whether a local model can do long-horizon, tool-using work requires a stable agent, a real browser, and sessions that survive hours of autonomous turns. This harness provides that setup, and the preserved NEON BREACH run shows what a single nine-hour session produces.
-
-
+Evaluating whether a local model can do long-horizon, tool-using work requires a stable agent, a real browser, and sessions that survive hours of autonomous turns. This harness provides that setup.
 https://github.com/user-attachments/assets/13a52784-d0fe-40f3-91c3-5eb003e6f420
 
-- [Play NEON BREACH](https://blazestorm001.github.io/game-harness/)
-- [Agent trace](https://blazestorm001.github.io/game-harness/traces.html)
-- [Experiment results](examples/neon-breach/README.md)
+## Evaluations
 
+| Scenario | Model | Outcome | Details | Trace |
+| --- | --- | --- | --- | --- |
+| NEON BREACH | Qwen3.8-27B | Complete, playable game | [Case study](examples/neon-breach/qwen3.8-27b/README.md) | [Trace](https://blazestorm001.github.io/game-harness/traces/qwen3.8-27b.html) |
+| NEON BREACH | Gemma 4 26B A4B | Incomplete game | [Evaluation](examples/neon-breach/gemma4-26b-a4b/README.md) | [Trace](https://blazestorm001.github.io/game-harness/traces/gemma4-26b-a4b.html) |
+
+[Play the Qwen-generated NEON BREACH game](https://blazestorm001.github.io/game-harness/).
 
 ## Quick start
 
@@ -24,16 +26,18 @@ https://github.com/user-attachments/assets/13a52784-d0fe-40f3-91c3-5eb003e6f420
 ./harness/scripts/setup.sh --install
 ./harness/scripts/setup.sh --check
 
-# start a model server (see "Model server" below), then run the bundled scenario
-./harness/scripts/run-eval.sh --scenario harness/scenarios/neon-breach --hours 10
+# start a llama.cpp server, then run the bundled two-hour evaluation
+./harness/scripts/run-eval.sh \
+  --scenario harness/scenarios/neon-breach \
+  --model qwen
 ```
 
 ## Requirements
 
 - Linux or WSL2
 - Node.js 20+, npm, Bash, Git
-- `curl`, `jq`, `rg`, GNU `timeout`, `realpath`, `sha256sum`
-- A running llama.cpp model server (see Model server)
+- `curl`, `jq`, `rg`, GNU `timeout`, `realpath`
+- A running OpenAI-compatible llama.cpp server
 
 ## Scenarios
 
@@ -54,69 +58,44 @@ validation pass.
 
 ## Usage
 
-Start the llama.cpp model server before running an experiment. See
-[Model server](#model-server) below for the case-study configuration.
+Start an OpenAI-compatible llama.cpp server before running an experiment. Pass
+`--model` an ID returned by its `/models` endpoint. Use `--base-url` if the
+server is not available at `http://127.0.0.1:8080/v1`.
 
-Run the bundled scenario:
+Run the bundled scenario with the two-hour defaults:
 
 ```bash
-./harness/scripts/run-eval.sh --scenario harness/scenarios/neon-breach --hours 10
+./harness/scripts/run-eval.sh \
+  --scenario harness/scenarios/neon-breach \
+  --model qwen
 ```
 
 Run a custom scenario:
 
 ```bash
-./harness/scripts/run-eval.sh --scenario /path/to/my-scenario --hours 10
+./harness/scripts/run-eval.sh \
+  --scenario /path/to/my-scenario \
+  --model my-model \
+  --hours 4 \
+  --turn-minutes 30 \
+  --final-minutes 30
 ```
 
-Each run receives a new workspace at `.runs/<scenario>-<timestamp>/`. Continue
-a specific saved session without replaying its initial prompt or references:
+Each run receives a workspace at `.runs/<scenario>-<timestamp>/`. Resume one by
+passing its relative or absolute path; the requested duration is additional:
 
 ```bash
-./harness/scripts/run-eval.sh --resume neon-breach-20260910-004540 --hours 10
+./harness/scripts/run-eval.sh \
+  --resume .runs/neon-breach-20260910-004540 \
+  --model qwen \
+  --hours 2
 ```
 
-Or continue the newest saved session:
-
-```bash
-./harness/scripts/run-eval.sh --resume-latest --hours 10
-```
-
-`TURN_MINUTES` (default 75) limits a stalled Pi process while preserving its
-saved session for continuation. `FINAL_MINUTES` (default 60) reserves time for
-the scenario's closing validation prompt. Each invocation records versions,
-input hashes, timings, statuses, and session identity in its run metadata.
-
-## Model server
-
-The bundled and tested configuration uses Pi's `llama-cpp` provider with a
-llama.cpp server. Set `LLAMA_URL` to its OpenAI-compatible API base URL and
-`PI_MODEL` to a model ID returned by the server's `/models` endpoint.
-
-A portable copy of the configuration used for the case study is
-[`examples/neon-breach/qwen3.8-27b-rtx5060ti.ini`](examples/neon-breach/qwen3.8-27b-rtx5060ti.ini).
-Replace the placeholder `model`, `spec-draft-model`, and `mmproj` paths, then run
-from the repository root:
-
-```bash
-llama serve \
-  --models-preset examples/neon-breach/qwen3.8-27b-rtx5060ti.ini \
-  --models-max 1 \
-  --host 127.0.0.1 \
-  --port 8080
-```
-
-The harness defaults match the preset section name and server address:
-
-```bash
-export PI_MODEL=qwen
-export LLAMA_URL=http://127.0.0.1:8080/v1
-export MODEL_PRESET=examples/neon-breach/qwen3.8-27b-rtx5060ti.ini
-```
-
-The case study paired an ASCII-condensed Qwen3.8-27B target with a DFlash2 draft
-on an RTX 5060 Ti. See the preset and the
-[case study notes](examples/neon-breach/README.md) for the full configuration.
+The initial prompt runs once. The continuation prompt then repeats until the
+reserved final stage, where the final prompt repeats until the overall deadline.
+Every Pi invocation is capped by `--turn-minutes` (default 30) and the time
+remaining in its stage. `--final-minutes` defaults to 30; set it to `0` to skip
+finalization.
 
 ## Context and tools
 
