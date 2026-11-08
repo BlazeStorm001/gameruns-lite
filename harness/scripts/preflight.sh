@@ -93,7 +93,7 @@ import { chromium } from "@playwright/test";
 
 const browser = await chromium.launch({ headless: true });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
-await page.setContent("<title>OK</title><h1 style='font:100px sans-serif'>VISION_OK_7319</h1>");
+await page.setContent("<title>OK</title><h1 style='font:100px sans-serif'>VISION_OK</h1>");
 if (await page.title() !== "OK") throw new Error("browser check failed");
 await page.screenshot({ path: process.env.PREFLIGHT_IMAGE });
 await browser.close();
@@ -137,7 +137,7 @@ if ! timeout 240 "$pi_bin" "${common[@]}" \
   > "$vision_output"; then
   report_failure "Pi failed during the vision preflight." "$vision_output"
 fi
-rg -Fx 'VISION_OK_7319' "$vision_output" >/dev/null || \
+rg -Fx 'VISION_OK' "$vision_output" >/dev/null || \
   report_failure "The model did not return the expected vision preflight response." "$vision_output"
 
 tool_output=.harness/pi-tool-preflight.jsonl
