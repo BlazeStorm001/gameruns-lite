@@ -76,3 +76,4 @@ Run the evaluation with:
 
 The complete session is available as an interactive
 [agent trace](https://blazestorm001.github.io/gameruns-lite/traces/qwen3.8-27b.html).
+This run used the [previous game-test contract](https://github.com/BlazeStorm001/gameruns-lite/blob/28adc44cfd2a9b707816abdc86372a43ee641dcf/harness/extensions/game-test/index.ts).

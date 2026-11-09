@@ -1,9 +1,13 @@
+import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
+import type { Page } from "playwright";
+
 import type { createBrowserSession } from "./browser.ts";
 
 export async function observe(
-  page: any,
+  page: Page,
   includeScreenshot: boolean,
   takeEvents: ReturnType<typeof createBrowserSession>["takeEvents"],
+  transition?: unknown,
 ) {
   const pageState = await page.evaluate(async () => {
     const truncation: Record<string, number> = {};
@@ -27,8 +31,6 @@ export async function observe(
     const gameTest = (window as any).__gameTest;
     let snapshot: any = null;
     let snapshotError: string | null = null;
-    let actions: any = null;
-    let actionsError: string | null = null;
 
     if (gameTest && typeof gameTest.snapshot === "function") {
       try {
@@ -37,15 +39,6 @@ export async function observe(
         snapshotError = String(error);
       }
     }
-
-    if (gameTest && typeof gameTest.actions === "function") {
-      try {
-        actions = jsonValue(await gameTest.actions());
-      } catch (error) {
-        actionsError = String(error);
-      }
-    }
-
 
     return {
       url: text(location.href, 1500),
@@ -58,24 +51,21 @@ export async function observe(
       gameTest: {
         available: Boolean(gameTest),
         methods: gameTest
-          ? ["reset", "actions", "act", "step", "snapshot"].filter(
-              (name) => typeof gameTest[name] === "function",
-            )
+          ? ["reset", "step", "snapshot", "setMode"].filter((name) => typeof gameTest[name] === "function")
           : [],
-        actions,
         snapshot,
         snapshotError,
-        actionsError,
       },
     };
   });
 
   const observation = {
     ...pageState,
+    transition: transition ?? null,
     ...takeEvents(),
   };
 
-  const content: any[] = [
+  const content: AgentToolResult<unknown>["content"] = [
     {
       type: "text",
       text: JSON.stringify(observation, null, 2),
@@ -90,7 +80,6 @@ export async function observe(
       mimeType: "image/png",
     });
   }
-
 
   return { observation, content };
 }

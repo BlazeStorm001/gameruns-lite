@@ -1,5 +1,5 @@
+import type { Browser, Page } from "playwright";
 import { access } from "node:fs/promises";
-
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -13,9 +13,8 @@ type BrowserEvent = {
 };
 
 type BrowserState = {
-  browser?: any;
-  context?: any;
-  page?: any;
+  browser?: Browser;
+  page?: Page;
   events: BrowserEvent[];
 };
 
@@ -25,10 +24,10 @@ type OperationParams = {
   durationMs?: number;
   x?: number;
   y?: number;
-  action?: string;
-  payload?: unknown;
-  frames?: number;
+  input?: unknown;
+  ticks?: number;
   seed?: number;
+  mode?: "manual" | "realtime";
 };
 
 function harnessRoot(cwd: string) {
@@ -56,9 +55,8 @@ export function createBrowserSession() {
 
   function remember(kind: string, value: unknown) {
     const raw = String(value ?? "").replace(/\s+/g, " ");
-    const text = raw.length > MAX_TEXT * 2
-      ? `${raw.slice(0, MAX_TEXT)} ... [truncated] ... ${raw.slice(-MAX_TEXT)}`
-      : raw;
+    const text =
+      raw.length > MAX_TEXT * 2 ? `${raw.slice(0, MAX_TEXT)} ... [truncated] ... ${raw.slice(-MAX_TEXT)}` : raw;
     const previous = state.events.find((event) => event.kind === kind && event.text === text);
     if (previous) {
       previous.count++;
@@ -72,9 +70,8 @@ export function createBrowserSession() {
   }
 
   async function closeBrowser() {
-    await state.browser?.close().catch(() => undefined);
+    await state.browser?.close();
     state.browser = undefined;
-    state.context = undefined;
     state.page = undefined;
     state.events = [];
     dropped = 0;
@@ -98,42 +95,44 @@ export function createBrowserSession() {
     };
   }
 
-  async function runOperation(operation: string, params: OperationParams, cwd: string) {
+  async function runOperation(operation: string, params: OperationParams, cwd = process.cwd()) {
+    let transition: unknown;
+    let hasTransition = false;
     if (operation === "open") {
       if (!params.url) throw new Error("operation=open requires url.");
       await closeBrowser();
+
       const chromium = await loadChromium(cwd);
       try {
         state.browser = await chromium.launch({ headless: true });
       } catch (error) {
         throw new Error(
-          `Could not launch Chromium: ${String(error)}\n\n` +
-          "Run ./harness/scripts/setup.sh --install to install the pinned browser.\n" +
+          `Could not launch Chromium: ${String(error)}\n\n` + "Run ./harness/scripts/setup.sh --install to install the pinned browser.\n" +
           "Run ./harness/scripts/setup.sh --check to verify the installation.",
           { cause: error },
         );
       }
-      state.context = await state.browser.newContext({
-        viewport: { width: 1280, height: 720 },
-      });
-      state.page = await state.context.newPage();
-
-      state.page.on("console", (message: any) => {
-        if (["error", "warning"].includes(message.type())) remember(`console.${message.type()}`, message.text());
-      });
-      state.page.on("pageerror", (error: any) => remember("pageerror", error));
-      state.page.on("requestfailed", (request: any) => {
-        remember("requestfailed", `${request.method()} ${request.url()} ${request.failure()?.errorText ?? ""}`);
-      });
-      state.page.on("response", (response: any) => {
-        if (response.status() >= 400) remember("http", `${response.status()} ${response.url()}`);
-      });
-
       try {
+        const context = await state.browser.newContext({
+          viewport: { width: 1280, height: 720 },
+        });
+        state.page = await context.newPage();
+
+        state.page.on("console", (message) => {
+          if (["error", "warning"].includes(message.type())) remember(`console.${message.type()}`, message.text());
+        });
+        state.page.on("pageerror", (error) => remember("pageerror", error));
+        state.page.on("requestfailed", (request) => {
+          remember("requestfailed", `${request.method()} ${request.url()} ${request.failure()?.errorText ?? ""}`);
+        });
+        state.page.on("response", (response) => {
+          if (response.status() >= 400) remember("http", `${response.status()} ${response.url()}`);
+        });
+
         await state.page.goto(params.url, { waitUntil: "domcontentloaded", timeout: 15000 });
       } catch (error) {
         await closeBrowser();
-        throw new Error(`Could not open ${params.url}: ${String(error)}`);
+        throw new Error(`Could not open ${params.url}: ${String(error)}`, { cause: error });
       }
     } else {
       const page = requirePage();
@@ -148,41 +147,46 @@ export function createBrowserSession() {
           throw new Error("operation=click requires x and y.");
         }
         await page.mouse.click(params.x, params.y);
-      } else if (operation === "action") {
-        if (!params.action) throw new Error("operation=action requires action.");
-        await page.evaluate(
-          async ({ action, payload }: { action: string; payload: unknown }) => {
-            const api = (window as any).__gameTest;
-            if (!api || typeof api.act !== "function") {
-              throw new Error("window.__gameTest.act(action, payload) is not available");
-            }
-            await api.act(action, payload);
-          },
-          { action: params.action, payload: params.payload },
-        );
       } else if (operation === "step") {
-        if (!params.frames) throw new Error("operation=step requires frames.");
-        await page.evaluate(async (frames: number) => {
-          const api = (window as any).__gameTest;
-          if (!api || typeof api.step !== "function") {
-            throw new Error("window.__gameTest.step(frames) is not available");
-          }
-          await api.step(frames);
-        }, params.frames);
+        transition = await page.evaluate(
+          async ({ input, ticks }) => {
+            const api = (window as any).__gameTest;
+            if (!api || typeof api.step !== "function") {
+              throw new Error("window.__gameTest.step({ input, ticks }) is not available");
+            }
+            return await api.step({ input: input ?? {}, ticks: ticks ?? 1 });
+          },
+          { input: params.input, ticks: params.ticks },
+        );
+        hasTransition = true;
       } else if (operation === "wait") {
         await page.waitForTimeout(params.durationMs ?? 1000);
       } else if (operation === "reset") {
-        const resetThroughHook = await page.evaluate(async (seed: number | undefined) => {
-          const api = (window as any).__gameTest;
-          if (!api || typeof api.reset !== "function") return false;
-          await api.reset(seed);
-          return true;
-        }, params.seed);
-        if (!resetThroughHook) {
+        const reset = await page.evaluate(
+          async ({ seed, mode }) => {
+            const api = (window as any).__gameTest;
+            if (!api || typeof api.reset !== "function") return { available: false };
+            return { available: true, state: await api.reset({ seed, mode }) };
+          },
+          { seed: params.seed, mode: params.mode ?? "manual" },
+        );
+        transition = reset.state;
+        hasTransition = reset.available;
+        if (!reset.available) {
           state.events = [];
           dropped = 0;
           await page.reload({ waitUntil: "domcontentloaded" });
         }
+      } else if (operation === "set-mode") {
+        if (!params.mode) throw new Error("operation=set-mode requires mode.");
+        transition = await page.evaluate(async (mode: "manual" | "realtime") => {
+          const api = (window as any).__gameTest;
+          if (!api || typeof api.setMode !== "function") {
+            throw new Error("window.__gameTest.setMode(mode) is not available");
+          }
+          return await api.setMode(mode);
+        }, params.mode);
+        hasTransition = true;
       } else if (operation === "reload") {
         state.events = [];
         dropped = 0;
@@ -190,7 +194,17 @@ export function createBrowserSession() {
       }
     }
 
-    return requirePage();
+    if (hasTransition) {
+      try {
+        const json = JSON.stringify(transition);
+        if (json === undefined) throw new Error("state is undefined");
+        transition = JSON.parse(json);
+      } catch (error) {
+        throw new Error(`Game test transition must be JSON-serializable: ${String(error)}`, { cause: error });
+      }
+    }
+
+    return { page: requirePage(), transition };
   }
 
   return { close: closeBrowser, runOperation, takeEvents };

@@ -39,7 +39,7 @@ if [[ -e "$workspace" ]]; then
 fi
 
 mkdir -p \
-  "$workspace/.pi/extensions" \
+  "$workspace/.pi/extensions/game-test" \
   "$workspace/.harness/pi-sessions" \
   "$workspace/assets/generated" \
   "$workspace/eval-logs" \
@@ -48,7 +48,7 @@ mkdir -p \
   "$workspace/scripts"
 
 cp "$harness_root/extensions/"*.ts "$workspace/.pi/extensions/"
-cp -R "$harness_root/extensions/game-test" "$workspace/.pi/extensions/"
+cp "$harness_root/extensions/game-test/"{index,browser,observe}.ts "$workspace/.pi/extensions/game-test/"
 cp "$scenario_root/prompts/"*.txt "$workspace/prompts/"
 cp "$harness_root/scripts/generate-image.sh" "$workspace/scripts/"
 

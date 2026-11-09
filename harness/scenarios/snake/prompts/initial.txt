@@ -5,7 +5,7 @@ Requirements:
 - Prevent immediate direction reversal. Spawn food only in empty cells. Handle a completely filled board as a win.
 - Make the game visually readable with a visible score, controls, and game state. Fit common desktop viewports.
 - Include automated checks for movement, food/growth, reversal prevention, collisions, pause/resume, and restart. Test the actual browser behavior and capture visual evidence rather than relying on source inspection.
-- Expose window.__gameTest with reset(seed), actions(), act(action, payload), step(frames), and snapshot(). Return focused JSON-serializable state. Document supported actions. If manual stepping is supported, stop automatic simulation updates in test mode and use the same gameplay update logic as normal play.
+- Expose the deterministic window.__gameTest contract described by game_test: reset({seed,mode}), step({input,ticks}), snapshot(), and setMode(mode). Document the input shape.
 - Include a README with the exact local launch command, URL, controls, and test commands. Report limitations honestly.
 
 Use game_test and Playwright MCP to inspect the running game and verify meaningful transitions. Start a development server on an available localhost port and document it. Do not kill unrelated processes or use broad pkill commands; manage only servers you started. Do not modify files outside this workspace.
