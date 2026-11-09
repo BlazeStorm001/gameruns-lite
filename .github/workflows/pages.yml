@@ -25,9 +25,9 @@ jobs:
       - uses: actions/configure-pages@v6
       - name: Stage game and traces
         run: |
-          mkdir -p _site/traces
-          cp examples/neon-breach/qwen3.8-27b/game/index.html _site/
-          cp -R examples/neon-breach/qwen3.8-27b/game/js _site/
+          mkdir -p _site/games/neon-breach _site/traces
+          cp examples/neon-breach/qwen3.8-27b/game/index.html _site/games/neon-breach/
+          cp -R examples/neon-breach/qwen3.8-27b/game/js _site/games/neon-breach/
           cp examples/neon-breach/qwen3.8-27b/traces.html _site/traces/qwen3.8-27b.html
           cp examples/neon-breach/gemma4-26b-a4b/traces.html _site/traces/gemma4-26b-a4b.html
       - uses: actions/upload-pages-artifact@v5

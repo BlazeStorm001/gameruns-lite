@@ -35,7 +35,7 @@ https://github.com/user-attachments/assets/a9b4eb13-2b91-45b8-970f-b1507fd1290f
 | NEON BREACH | Qwen3.8-27B | Complete, playable game | [Case study](examples/neon-breach/qwen3.8-27b/README.md) | [Trace](https://blazestorm001.github.io/gameruns-lite/traces/qwen3.8-27b.html) |
 | NEON BREACH | Gemma 4 26B A4B | Incomplete game | [Evaluation](examples/neon-breach/gemma4-26b-a4b/README.md) | [Trace](https://blazestorm001.github.io/gameruns-lite/traces/gemma4-26b-a4b.html) |
 
-[Play the Qwen-generated NEON BREACH game](https://blazestorm001.github.io/gameruns-lite/).
+[Play the Qwen-generated NEON BREACH game](https://blazestorm001.github.io/gameruns-lite/games/neon-breach/).
 
 ## Quick start
 
