@@ -1,13 +1,9 @@
-Build a complete, polished single-player Snake browser game in this workspace. Use HTML, CSS, and JavaScript with no build step or remote services. Keep the project small and easy to run.
+Create a complete, polished Snake browser game end to end.
 
-Requirements:
-- A clear start screen, grid-based snake movement, arrow-key and WASD controls, food, growth, score, wall and self collisions, pause/resume, game over, and restart.
-- Prevent immediate direction reversal. Spawn food only in empty cells. Handle a completely filled board as a win.
-- Make the game visually readable with a visible score, controls, and game state. Fit common desktop viewports.
-- Include automated checks for movement, food/growth, reversal prevention, collisions, pause/resume, and restart. Test the actual browser behavior and capture visual evidence rather than relying on source inspection.
-- Expose the deterministic window.__gameTest contract described by game_test: reset({seed,mode}), step({input,ticks}), snapshot(), and setMode(mode). Document the input shape.
-- Include a README with the exact local launch command, URL, controls, and test commands. Report limitations honestly.
+The final result should look and feel like a complete game, not a technical demo.
 
-Use game_test and Playwright MCP to inspect the running game and verify meaningful transitions. Start a development server on an available localhost port and document it. Do not kill unrelated processes or use broad pkill commands; manage only servers you started. Do not modify files outside this workspace.
+You have access to the repository, shell, network, library documentation, image-generation tool and a headless browser. Choose the technology, architecture, mechanics, scope, art approach, and testing strategy yourself. You may use game_test to run the game and diagnose problems.
 
-Implement, run, test, and improve the game autonomously. Do not stop at a plan or a mockup.
+Work autonomously: build the game, run it, play and inspect it in the browser, diagnose problems, fix them, and keep improving it. Do not ask me questions. Before finishing, make sure another person can install, run, understand, and play what you created.
+
+Do not give up.
