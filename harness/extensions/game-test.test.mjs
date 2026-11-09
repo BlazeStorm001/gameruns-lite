@@ -41,7 +41,7 @@ test('browser launch failure preserves its cause and gives setup guidance withou
 test('copied workspace discovers each extension once without copying tests', { timeout: 30000 }, async () => {
   const created = spawnSync('bash', [join(root, 'scripts/create-workspace.sh'),
     join(root, 'scenarios/neon-breach')], {
-    encoding: 'utf8', cwd: root, env: {...process.env, ENABLE_CONTEXT7: '0'}, timeout: 10000,
+    encoding: 'utf8', cwd: root, timeout: 10000,
   });
   assert.equal(created.status, 0, created.stderr);
   const workspace = created.stdout.trim();

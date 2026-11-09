@@ -1,13 +1,13 @@
 {
-  "name": "game-harness",
+  "name": "gameruns-lite",
   "private": true,
   "version": "1.0.0",
   "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.19.0"
   },
   "dependencies": {
-    "@earendil-works/pi-coding-agent": "0.84.2",
+    "@earendil-works/pi-coding-agent": "1.5.0",
     "@playwright/mcp": "0.0.79",
     "@playwright/test": "1.62.1"
   }

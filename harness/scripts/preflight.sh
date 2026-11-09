@@ -4,14 +4,12 @@ set -Eeuo pipefail
 harness_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 repo_root="$(cd -- "$harness_root/.." && pwd)"
 scenario=""
-provider="llama-cpp"
-model=""
-url="http://127.0.0.1:8080/v1"
+model_reference=""
 
 usage() {
   cat >&2 <<EOF
 Usage:
-  $0 --scenario PATH --model ID [--provider NAME] [--base-url URL]
+  $0 --scenario PATH --model PROVIDER/ID
 EOF
 }
 
@@ -22,20 +20,10 @@ while (( $# > 0 )); do
       [[ $# -gt 0 ]] || { echo "--scenario requires a value" >&2; exit 2; }
       scenario="$1"
       ;;
-    --provider)
-      shift
-      [[ $# -gt 0 ]] || { echo "--provider requires a value" >&2; exit 2; }
-      provider="$1"
-      ;;
     --model)
       shift
       [[ $# -gt 0 ]] || { echo "--model requires a value" >&2; exit 2; }
-      model="$1"
-      ;;
-    --base-url)
-      shift
-      [[ $# -gt 0 ]] || { echo "--base-url requires a value" >&2; exit 2; }
-      url="$1"
+      model_reference="$1"
       ;;
     -h|--help)
       usage
@@ -51,25 +39,18 @@ done
 
 [[ -n "$scenario" ]] || { echo "--scenario PATH is required." >&2; exit 2; }
 [[ -d "$scenario" ]] || { echo "Scenario directory not found: $scenario" >&2; exit 2; }
-[[ -n "$model" ]] || { echo "--model ID is required." >&2; exit 2; }
-[[ -n "$provider" ]] || { echo "--provider must not be empty." >&2; exit 2; }
-[[ -n "$url" ]] || { echo "--base-url must not be empty." >&2; exit 2; }
+[[ "$model_reference" =~ ^[^/[:space:]]+/[^[:space:]]+$ ]] || {
+  echo "--model requires PROVIDER/ID (for example local/qwen-dflash4)." >&2
+  exit 2
+}
+# Model IDs may contain slashes; only the first separates the provider.
+provider="${model_reference%%/*}"
+model="${model_reference#*/}"
 scenario="$(realpath "$scenario")"
-url="${url%/}"
 
 "$harness_root/scripts/setup.sh" --check >/dev/null
 
 pi_bin="$harness_root/node_modules/.bin/pi"
-models_json="$(curl -fsS "$url/models")" || {
-  echo "Cannot reach the model endpoint: $url/models" >&2
-  exit 1
-}
-echo "$models_json" | jq -e --arg model "$model" \
-  '.data[]? | select(.id == $model)' >/dev/null || {
-    echo "Model '$model' was not found at $url/models" >&2
-    exit 1
-  }
-
 workspace="$("$harness_root/scripts/create-workspace.sh" "$scenario")"
 cleanup() {
   case "$workspace/" in
@@ -83,8 +64,6 @@ export PI_CODING_AGENT_DIR="$harness_root/.runtime/pi-agent"
 export PLAYWRIGHT_BROWSERS_PATH="$harness_root/.runtime/browsers"
 export PI_SKIP_VERSION_CHECK=1
 export PI_TELEMETRY=0
-export LLAMA_BASE_URL="$url"
-export LLAMA_API_KEY="${LLAMA_API_KEY:-no-key}"
 export PREFLIGHT_IMAGE="$workspace/.harness/pi-vision-preflight.png"
 
 cd "$harness_root"

@@ -1,13 +1,15 @@
-# Minimal Agentic Game Development Harness
+<img src="assets/gameruns-lite-logo.png" alt="GameRuns Lite logo: a pink looping G with a bold black outline" width="160">
 
-A minimal harness around the Pi coding agent for long-running autonomous browser-game development with locally hosted models.
+# GameRuns Lite
+
+A minimal harness around the Pi coding agent for long-running autonomous browser-game development runs.
 
 [![Deploy Game](https://github.com/BlazeStorm001/game-harness/actions/workflows/pages.yml/badge.svg)](https://github.com/BlazeStorm001/game-harness/actions/workflows/pages.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 ## Why
 
-Evaluating whether a local model can do long-horizon, tool-using work requires a stable agent, a real browser, and sessions that survive hours of autonomous turns. This harness provides that setup.
+Evaluating whether a model can do long-horizon, tool-using work requires a stable agent, a real browser, and sessions that survive hours of autonomous turns. This harness provides that setup.
 https://github.com/user-attachments/assets/13a52784-d0fe-40f3-91c3-5eb003e6f420
 
 ## Evaluations
@@ -21,23 +23,72 @@ https://github.com/user-attachments/assets/13a52784-d0fe-40f3-91c3-5eb003e6f420
 
 ## Quick start
 
+Requires Linux or WSL2, Node.js 22.19+, npm, Bash, Git, `curl`, `jq`, `rg`,
+GNU `timeout`, and `realpath`. Use a model that supports images and tool calls.
+
 ```bash
-# install pinned dependencies and verify
+git clone https://github.com/BlazeStorm001/game-harness.git gameruns-lite
+cd gameruns-lite
 ./harness/scripts/setup.sh --install
 ./harness/scripts/setup.sh --check
-
-# start a llama.cpp server, then run the bundled two-hour evaluation
-./harness/scripts/run-eval.sh \
-  --scenario harness/scenarios/neon-breach \
-  --model qwen
 ```
 
-## Requirements
+Configure a model below, then start a two-hour run:
 
-- Linux or WSL2
-- Node.js 20+, npm, Bash, Git
-- `curl`, `jq`, `rg`, GNU `timeout`, `realpath`
-- A running OpenAI-compatible llama.cpp server
+```bash
+./harness/scripts/run-eval.sh \
+  --scenario harness/scenarios/neon-breach \
+  --model local/qwen
+```
+
+## Model setup
+
+The harness uses `harness/.runtime/pi-agent/`, separate from your personal Pi
+configuration.
+
+### Local or custom endpoints
+
+Start your OpenAI-compatible server, then create
+`harness/.runtime/pi-agent/models.json`:
+
+```json
+{
+  "providers": {
+    "local": {
+      "baseUrl": "http://127.0.0.1:8080/v1",
+      "api": "openai-completions",
+      "apiKey": "local",
+      "models": [{
+        "id": "qwen",
+        "input": ["text", "image"],
+        "contextWindow": 90112,
+        "maxTokens": 90112
+      }]
+    }
+  }
+}
+```
+
+Adjust the example to match your model and server, including llama.cpp or another
+OpenAI-compatible endpoint. Use `local` for servers without authentication, or
+`${MODEL_API_KEY}` to read a key from your environment.
+Set `maxTokens` to your desired output limit; Pi defaults to 16,384 when omitted.
+See [Pi model configuration](https://pi.dev/docs/latest/models#configure-a-compatible-endpoint)
+for more options.
+
+### Subscription or hosted providers
+
+Open the harness's Pi from the repository root:
+
+```bash
+PI_CODING_AGENT_DIR="$PWD/harness/.runtime/pi-agent" \
+  ./harness/node_modules/.bin/pi
+```
+
+Sign in with `/login`, choose a model with `/model`, then exit Pi.
+Pass its `PROVIDER/ID` to the harness with `--model`.
+Built-in providers need no custom `models.json` configuration.
+Sign in once for this harness; your global Pi login is separate.
 
 ## Scenarios
 
@@ -58,27 +109,14 @@ validation pass.
 
 ## Usage
 
-Start an OpenAI-compatible llama.cpp server before running an experiment. Pass
-`--model` an ID returned by its `/models` endpoint. Use `--base-url` if the
-server is not available at `http://127.0.0.1:8080/v1`.
-
-Run the bundled scenario with the two-hour defaults:
+Use `--model PROVIDER/ID` for both new runs and resumes. A short run:
 
 ```bash
 ./harness/scripts/run-eval.sh \
   --scenario harness/scenarios/neon-breach \
-  --model qwen
-```
-
-Run a custom scenario:
-
-```bash
-./harness/scripts/run-eval.sh \
-  --scenario /path/to/my-scenario \
-  --model my-model \
-  --hours 4 \
-  --turn-minutes 30 \
-  --final-minutes 30
+  --model local/qwen \
+  --time-budget 15m \
+  --final-budget 3m
 ```
 
 Each run receives a workspace at `.runs/<scenario>-<timestamp>/`. Resume one by
@@ -87,15 +125,18 @@ passing its relative or absolute path; the requested duration is additional:
 ```bash
 ./harness/scripts/run-eval.sh \
   --resume .runs/neon-breach-20260910-004540 \
-  --model qwen \
-  --hours 2
+  --model local/qwen \
+  --time-budget 2h
 ```
 
-The initial prompt runs once. The continuation prompt then repeats until the
-reserved final stage, where the final prompt repeats until the overall deadline.
-Every Pi invocation is capped by `--turn-minutes` (default 30) and the time
-remaining in its stage. `--final-minutes` defaults to 30; set it to `0` to skip
-finalization.
+The initial prompt runs once, followed by repeated continuation prompts.
+During the final stage, the final prompt repeats until time runs out.
+
+- `--time-budget`: total runtime (default `2h`).
+- `--final-budget`: time reserved within that total for finalization (default `30m`; `0` disables it).
+- `--turn-budget`: optional cap per Pi invocation (default `0`, uncapped).
+
+Each invocation stops at its stage deadline, even without a turn cap.
 
 ## Context and tools
 
@@ -112,8 +153,6 @@ Optional integrations:
   `CLOUDFLARE_API_TOKEN` in the shell used to launch the experiment. The
   `generate_image` tool uses FLUX.1 Schnell and requires ImageMagick's `magick`
   command. Leave the variables unset to run without remote image generation.
-- Context7 documentation access: set `ENABLE_CONTEXT7=1` and
-  `CONTEXT7_API_KEY`.
 
 ## Contributing
 

@@ -3,14 +3,11 @@ set -Eeuo pipefail
 
 harness_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 
-hours=2
-minutes=""
+time_budget="2h"
 duration_set=false
-turn_minutes=30
-final_minutes=30
-provider="llama-cpp"
-model=""
-url="http://127.0.0.1:8080/v1"
+turn_budget="0"
+final_budget="30m"
+model_reference=""
 scenario=""
 resume=false
 resume_target=""
@@ -19,24 +16,19 @@ skip_preflight=false
 usage() {
   cat <<EOF
 Usage:
-  $0 --scenario PATH --model ID [--hours N | --minutes N] [OPTIONS]
-  $0 --resume PATH --model ID [--hours N | --minutes N] [OPTIONS]
+  $0 --scenario PATH --model PROVIDER/ID [--time-budget TIME] [OPTIONS]
+  $0 --resume PATH --model PROVIDER/ID [--time-budget TIME] [OPTIONS]
 
 Options:
   --scenario PATH          Scenario directory (required for a new run)
   --resume PATH            Continue a saved evaluation workspace
-  --hours N                Total runtime in hours, minimum 1 (default: 2)
-  --minutes N              Duration in minutes, minimum 1
-  --turn-minutes N         Maximum Pi invocation time, minimum 1 (default: 30)
-  --final-minutes N        Reserved final phase, minimum 0 (default: 30)
-  --provider NAME          Pi provider (default: llama-cpp)
-  --model ID               Served model ID (required)
-  --base-url URL           OpenAI-compatible base URL
-                           (default: http://127.0.0.1:8080/v1)
+  --time-budget TIME       Total runtime, e.g. 30m or 2h (default: 2h)
+  --turn-budget TIME       Maximum Pi invocation time (default: 0, no per-turn cap)
+  --final-budget TIME      Final phase within total runtime (default: 30m; 0 disables)
+  --model PROVIDER/ID      Configured Pi provider/model reference (required)
   --skip-preflight         Skip preflight
 
-Environment:
-  LLAMA_API_KEY            Optional model server API key (default: no-key)
+Durations use whole minutes (30 or 30m) or hours (2h).
 EOF
 }
 
@@ -47,18 +39,11 @@ while (( $# > 0 )); do
       [[ $# -gt 0 ]] || { echo "--scenario requires a value" >&2; exit 2; }
       scenario="$1"
       ;;
-    --hours)
+    --time-budget)
       shift
-      [[ $# -gt 0 ]] || { echo "--hours requires a value" >&2; exit 2; }
-      [[ "$duration_set" == false ]] || { echo "Specify only one duration option." >&2; exit 2; }
-      hours="$1"
-      duration_set=true
-      ;;
-    --minutes)
-      shift
-      [[ $# -gt 0 ]] || { echo "--minutes requires a value" >&2; exit 2; }
-      [[ "$duration_set" == false ]] || { echo "Specify only one duration option." >&2; exit 2; }
-      minutes="$1"
+      [[ $# -gt 0 ]] || { echo "--time-budget requires a value" >&2; exit 2; }
+      [[ "$duration_set" == false ]] || { echo "--time-budget may only be supplied once." >&2; exit 2; }
+      time_budget="$1"
       duration_set=true
       ;;
     --resume)
@@ -68,30 +53,20 @@ while (( $# > 0 )); do
       resume=true
       resume_target="$1"
       ;;
-    --turn-minutes)
+    --turn-budget)
       shift
-      [[ $# -gt 0 ]] || { echo "--turn-minutes requires a value" >&2; exit 2; }
-      turn_minutes="$1"
+      [[ $# -gt 0 ]] || { echo "--turn-budget requires a value" >&2; exit 2; }
+      turn_budget="$1"
       ;;
-    --final-minutes)
+    --final-budget)
       shift
-      [[ $# -gt 0 ]] || { echo "--final-minutes requires a value" >&2; exit 2; }
-      final_minutes="$1"
-      ;;
-    --provider)
-      shift
-      [[ $# -gt 0 ]] || { echo "--provider requires a value" >&2; exit 2; }
-      provider="$1"
+      [[ $# -gt 0 ]] || { echo "--final-budget requires a value" >&2; exit 2; }
+      final_budget="$1"
       ;;
     --model)
       shift
       [[ $# -gt 0 ]] || { echo "--model requires a value" >&2; exit 2; }
-      model="$1"
-      ;;
-    --base-url)
-      shift
-      [[ $# -gt 0 ]] || { echo "--base-url requires a value" >&2; exit 2; }
-      url="$1"
+      model_reference="$1"
       ;;
     --skip-preflight)
       skip_preflight=true
@@ -109,19 +84,25 @@ while (( $# > 0 )); do
   shift
 done
 
-if [[ -n "$minutes" ]]; then
-  [[ "$minutes" =~ ^[0-9]+$ ]] && (( minutes >= 1 )) || {
-    echo "Use at least one minute." >&2
-    exit 2
+parse_duration_minutes() {
+  local value="$1" flag="$2"
+  [[ "$value" =~ ^([0-9]{1,9})([mh]?)$ ]] || {
+    echo "$flag requires a non-negative whole duration, e.g. 30m or 2h (up to 9 digits)." >&2
+    return 2
   }
-  total_minutes="$minutes"
-else
-  [[ "$hours" =~ ^[0-9]+$ ]] && (( hours >= 1 )) || {
-    echo "Use at least one hour, or use --minutes." >&2
-    exit 2
-  }
-  total_minutes=$((hours * 60))
-fi
+  local minutes=$((10#${BASH_REMATCH[1]}))
+  [[ "${BASH_REMATCH[2]}" != h ]] || minutes=$((minutes * 60))
+  echo "$minutes"
+}
+
+total_minutes="$(parse_duration_minutes "$time_budget" --time-budget)"
+final_minutes="$(parse_duration_minutes "$final_budget" --final-budget)"
+turn_minutes="$(parse_duration_minutes "$turn_budget" --turn-budget)"
+(( total_minutes > 0 )) || { echo "--time-budget must be greater than zero." >&2; exit 2; }
+(( final_minutes < total_minutes )) || {
+  echo "--final-budget must be shorter than --time-budget; use 0 to disable it." >&2
+  exit 2
+}
 if [[ "$resume" == true && -n "$scenario" ]]; then
   echo "Specify exactly one of --scenario or --resume." >&2
   exit 2
@@ -131,18 +112,13 @@ if [[ "$resume" == false && -z "$scenario" ]]; then
   usage >&2
   exit 2
 fi
-[[ -n "$model" ]] || {
-  echo "--model ID is required." >&2
+[[ "$model_reference" =~ ^[^/[:space:]]+/[^[:space:]]+$ ]] || {
+  echo "--model requires PROVIDER/ID (for example local/qwen-dflash4)." >&2
   exit 2
 }
-[[ -n "$provider" ]] || {
-  echo "--provider must not be empty." >&2
-  exit 2
-}
-[[ -n "$url" ]] || {
-  echo "--base-url must not be empty." >&2
-  exit 2
-}
+# Model IDs may contain slashes; only the first separates the provider.
+provider="${model_reference%%/*}"
+model="${model_reference#*/}"
 if [[ "$resume" == false ]]; then
   [[ -d "$scenario" ]] || {
     echo "Scenario directory not found: $scenario" >&2
@@ -151,38 +127,9 @@ if [[ "$resume" == false ]]; then
   scenario="$(realpath "$scenario")"
 fi
 
-[[ "$turn_minutes" =~ ^[0-9]+$ ]] && (( turn_minutes >= 1 )) || {
-  echo "--turn-minutes must be a whole number of at least 1." >&2
-  exit 2
-}
-[[ "$final_minutes" =~ ^[0-9]+$ ]] || {
-  echo "--final-minutes must be a non-negative whole number." >&2
-  exit 2
-}
-(( final_minutes < total_minutes )) || {
-  echo "--final-minutes must be shorter than the total duration." >&2
-  exit 2
-}
-
 "$harness_root/scripts/setup.sh" --check >/dev/null
 
-url="${url%/}"
 pi_bin="$harness_root/node_modules/.bin/pi"
-
-check_model() {
-  local models_json
-  models_json="$(curl -fsS "$url/models")" || {
-    echo "Cannot reach the model endpoint: $url/models" >&2
-    return 1
-  }
-  echo "$models_json" | jq -e --arg model "$model" \
-    '.data[]? | select(.id == $model)' >/dev/null || {
-      echo "Model '$model' was not found at $url/models" >&2
-      return 1
-    }
-}
-
-check_model
 
 if [[ "$resume" == true ]]; then
   [[ -d "$resume_target" ]] || {
@@ -216,7 +163,7 @@ if [[ "$resume" == true ]]; then
 else
   if [[ "$skip_preflight" == false ]]; then
     "$harness_root/scripts/preflight.sh" --scenario "$scenario" \
-      --provider "$provider" --model "$model" --base-url "$url"
+      --model "$model_reference"
   fi
   workspace="$("$harness_root/scripts/create-workspace.sh" "$scenario")"
 fi
@@ -226,9 +173,6 @@ export PI_CODING_AGENT_DIR="$harness_root/.runtime/pi-agent"
 export PLAYWRIGHT_BROWSERS_PATH="$harness_root/.runtime/browsers"
 export PI_SKIP_VERSION_CHECK=1
 export PI_TELEMETRY=0
-export LLAMA_BASE_URL="$url"
-export LLAMA_API_KEY="${LLAMA_API_KEY:-no-key}"
-
 cd "$workspace"
 mkdir -p eval-logs .harness/pi-sessions
 
@@ -264,43 +208,28 @@ else
   scenario_name="$(basename "$scenario_root")"
 fi
 
-(
-  find prompts references .pi/extensions -type f -print0
-  printf '%s\0' .pi/mcp.json scripts/generate-image.sh
-) | sort -z | xargs -0 sha256sum > .harness/inputs.sha256
-
-input_hashes="$(
-  jq -Rn '[inputs | select(length > 0) |
-    capture("^(?<sha256>[0-9a-f]{64})  (?<file>.*)$")]' < .harness/inputs.sha256
-)"
-
 metadata="eval-logs/$run_id-run.json"
 jq -n \
   --arg runId "$run_id" \
   --arg startedAt "$started_at" \
-  --arg workspace "/workspace/evaluation" \
+  --arg workspace "$workspace" \
   --arg sessionDirectory "$session_dir" \
-  --arg provider "$provider" \
-  --arg model "$model" \
-  --arg endpoint "$url" \
+  --arg modelReference "$model_reference" \
   --arg scenarioName "$scenario_name" \
   --arg piVersion "$($pi_bin --version)" \
   --arg playwrightVersion "$(node -p "require('$harness_root/node_modules/@playwright/test/package.json').version")" \
-  --arg piLlamaCommit "$(git -C "$harness_root/.runtime/pi-agent/git/github.com/huggingface/pi-llama" rev-parse HEAD)" \
   --arg piMcpVersion "$(jq -r '.version' "$harness_root/.runtime/pi-agent/npm/node_modules/pi-mcp-extension/package.json")" \
-  --argjson inputs "$input_hashes" \
   --argjson resumed "$resume" \
-  --argjson requestedMinutes "$total_minutes" \
-  --argjson turnMinutes "$turn_minutes" \
-  --argjson finalMinutes "$final_minutes" \
-  '{schemaVersion: 2, runId: $runId, startedAt: $startedAt,
+  --arg requestedTimeBudget "$time_budget" \
+  --arg requestedTurnBudget "$turn_budget" \
+  --arg requestedFinalBudget "$final_budget" \
+  '{schemaVersion: 3, runId: $runId, startedAt: $startedAt,
     workspace: $workspace, resumed: $resumed,
-    requestedHours: ($requestedMinutes / 60), requestedMinutes: $requestedMinutes,
-    turnMinutes: $turnMinutes, finalMinutes: $finalMinutes, provider: $provider,
-    model: $model, endpoint: $endpoint, sessionDirectory: $sessionDirectory,
-    scenario: {name: $scenarioName, inputs: $inputs},
+    requestedTimeBudget: $requestedTimeBudget, requestedTurnBudget: $requestedTurnBudget,
+    requestedFinalBudget: $requestedFinalBudget, modelReference: $modelReference,
+    sessionDirectory: $sessionDirectory, scenario: {name: $scenarioName},
     versions: {pi: $piVersion, playwright: $playwrightVersion,
-      piLlamaCommit: $piLlamaCommit, piMcpExtension: $piMcpVersion},
+      piMcpExtension: $piMcpVersion},
     invocations: []}' > "$metadata"
 
 session_id() {
@@ -404,7 +333,7 @@ if [[ "$resume" == false ]]; then
   remaining=$((final_start - $(date +%s)))
   if (( remaining > 0 )); then
     limit=$((turn_minutes * 60))
-    (( limit > remaining )) && limit="$remaining"
+    (( limit == 0 || limit > remaining )) && limit="$remaining"
     if run_prompt prompts/initial.txt "$limit" initial true; then
       failures=0
     elif [[ "$last_process_outcome" == "time-limit-reached" ]]; then
@@ -421,7 +350,7 @@ while (( $(date +%s) < final_start && failures < 3 )); do
   remaining=$((final_start - $(date +%s)))
   (( remaining > 0 )) || break
   limit=$((turn_minutes * 60))
-  (( limit > remaining )) && limit="$remaining"
+  (( limit == 0 || limit > remaining )) && limit="$remaining"
 
   if run_prompt prompts/continue.txt "$limit" continue false; then
     failures=0
@@ -442,7 +371,7 @@ if (( final_minutes > 0 )); then
     remaining=$((deadline - $(date +%s)))
     (( remaining > 0 )) || break
     limit=$((turn_minutes * 60))
-    (( limit > remaining )) && limit="$remaining"
+    (( limit == 0 || limit > remaining )) && limit="$remaining"
 
     if run_prompt prompts/final.txt "$limit" final false; then
       failures=0

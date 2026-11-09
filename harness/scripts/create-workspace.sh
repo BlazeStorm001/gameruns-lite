@@ -52,12 +52,7 @@ cp -R "$harness_root/extensions/game-test" "$workspace/.pi/extensions/"
 cp "$scenario_root/prompts/"*.txt "$workspace/prompts/"
 cp "$harness_root/scripts/generate-image.sh" "$workspace/scripts/"
 
-if [[ "${ENABLE_CONTEXT7:-0}" == "1" ]]; then
-  : "${CONTEXT7_API_KEY:?CONTEXT7_API_KEY is required when ENABLE_CONTEXT7=1}"
-  cp "$harness_root/mcp-with-context7.json" "$workspace/.pi/mcp.json"
-else
-  cp "$harness_root/mcp.json" "$workspace/.pi/mcp.json"
-fi
+cp "$harness_root/mcp.json" "$workspace/.pi/mcp.json"
 
 if [[ -d "$scenario_root/references" ]]; then
   find "$scenario_root/references" -maxdepth 1 -type f \

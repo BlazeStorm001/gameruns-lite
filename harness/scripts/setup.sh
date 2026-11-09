@@ -7,9 +7,7 @@ agent_dir="$runtime_root/pi-agent"
 pi_bin="$harness_root/node_modules/.bin/pi"
 playwright_bin="$harness_root/node_modules/.bin/playwright"
 
-pi_version="0.84.2"
-pi_llama_commit="8a876fca45c7824a50cd74f01ea11e0bab7964a2"
-pi_llama_source="git:github.com/huggingface/pi-llama@$pi_llama_commit"
+pi_version="1.5.0"
 pi_mcp_source="npm:pi-mcp-extension@1.5.0"
 
 usage() {
@@ -27,7 +25,7 @@ mode="$1"
   exit 2
 }
 
-required=(bash node npm git curl jq rg timeout sha256sum realpath find sort tee)
+required=(bash node npm git curl jq rg timeout realpath find sort tee)
 for command in "${required[@]}"; do
   command -v "$command" >/dev/null || {
     echo "Missing required command: $command" >&2
@@ -35,9 +33,9 @@ for command in "${required[@]}"; do
   }
 done
 
-node_major="$(node -p 'Number(process.versions.node.split(".")[0])')"
-(( node_major >= 20 )) || {
-  echo "Node.js 20 or newer is required." >&2
+node_supported="$(node -p 'const [major, minor] = process.versions.node.split(".").map(Number); major > 22 || (major === 22 && minor >= 19)')"
+[[ "$node_supported" == true ]] || {
+  echo "Node.js 22.19 or newer is required." >&2
   exit 1
 }
 
@@ -66,18 +64,10 @@ check_installation() {
     return 1
   }
 
-  jq -e --arg llama "$pi_llama_source" --arg mcp "$pi_mcp_source" \
-    '(.packages // []) | index($llama) != null and index($mcp) != null' \
+  jq -e --arg mcp "$pi_mcp_source" \
+    '(.packages // []) | index($mcp) != null' \
     "$settings" >/dev/null || {
       echo "Pinned Pi packages are missing." >&2
-      echo "Run: ./harness/scripts/setup.sh --install" >&2
-      return 1
-    }
-
-  llama_dir="$agent_dir/git/github.com/huggingface/pi-llama"
-  [[ -d "$llama_dir/.git" ]] && \
-    [[ "$(git -C "$llama_dir" rev-parse HEAD)" == "$pi_llama_commit" ]] || {
-      echo "The pinned pi-llama checkout is missing." >&2
       echo "Run: ./harness/scripts/setup.sh --install" >&2
       return 1
     }
@@ -119,7 +109,6 @@ cd "$harness_root"
 npm ci
 
 "$playwright_bin" install chromium
-"$pi_bin" install "$pi_llama_source" --no-approve
 "$pi_bin" install "$pi_mcp_source" --no-approve
 
 check_installation
