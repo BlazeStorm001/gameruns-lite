@@ -239,6 +239,17 @@ session_id() {
   head -1 "$file" | jq -r 'select(.type == "session") | .id // empty' 2>/dev/null || true
 }
 
+export_trace() {
+  local session_file trace_file="eval-logs/$run_id-trace.html"
+  session_file="$(find "$session_dir" -maxdepth 1 -type f -name '*.jsonl' -print -quit)"
+  [[ -n "$session_file" ]] || return 0
+  if "$pi_bin" --export "$session_file" "$trace_file" >/dev/null; then
+    echo "Trace: $workspace/$trace_file"
+  else
+    echo "Warning: Could not export the session trace." >&2
+  fi
+}
+
 finalize_metadata() {
   local status="$?" tmp="${metadata}.tmp"
   jq --arg endedAt "$(date --iso-8601=seconds)" \
@@ -247,6 +258,7 @@ finalize_metadata() {
     '. + {endedAt: $endedAt, sessionId: $sessionId,
       stopReason: $stopReason, exitStatus: $exitStatus}' \
     "$metadata" > "$tmp" && mv "$tmp" "$metadata"
+  export_trace
 }
 trap finalize_metadata EXIT
 

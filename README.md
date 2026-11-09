@@ -1,18 +1,30 @@
-<img src="assets/gameruns-lite-logo.png" alt="GameRuns Lite logo: a pink looping G with a bold black outline" width="160">
+<p align="center">
+  <img src="assets/gameruns-lite-logo.png" alt="GameRuns Lite logo: a pink looping G with a bold black outline" width="160">
+</p>
 
-# GameRuns Lite
+<h1 align="center">GameRuns Lite</h1>
 
-A minimal harness around the Pi coding agent for long-running autonomous browser-game development runs.
+<p align="center">
+  A minimal Pi harness for long-running AI browser-game development experiments.
+</p>
 
-[![Deploy Game](https://github.com/BlazeStorm001/gameruns-lite/actions/workflows/pages.yml/badge.svg)](https://github.com/BlazeStorm001/gameruns-lite/actions/workflows/pages.yml)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+<p align="center">
+  <a href="https://github.com/BlazeStorm001/gameruns-lite/actions/workflows/pages.yml"><img src="https://github.com/BlazeStorm001/gameruns-lite/actions/workflows/pages.yml/badge.svg" alt="Deploy Game"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="Apache 2.0 license"></a>
+</p>
+
+<p align="center">
+  <a href="#quick-start">Quick start</a> &middot;
+  <a href="#model-setup">Model setup</a> &middot;
+  <a href="#evaluations">Evaluations</a>
+</p>
 
 ## Why
 
 Evaluating whether a model can do long-horizon, tool-using work requires a stable agent, a real browser, and sessions that survive hours of autonomous turns. This harness provides that setup.
 https://github.com/user-attachments/assets/13a52784-d0fe-40f3-91c3-5eb003e6f420
 
-## Evaluations
+## Runs
 
 | Scenario | Model | Outcome | Details | Trace |
 | --- | --- | --- | --- | --- |
@@ -137,6 +149,9 @@ During the final stage, the final prompt repeats until time runs out.
 - `--turn-budget`: optional cap per Pi invocation (default `0`, uncapped).
 
 Each invocation stops at its stage deadline, even without a turn cap.
+
+After each run or resume, Pi exports the saved conversation to
+`eval-logs/<run-id>-trace.html` inside the workspace.
 
 ## Context and tools
 
