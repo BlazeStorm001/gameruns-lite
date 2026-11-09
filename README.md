@@ -4,7 +4,7 @@
 
 A minimal harness around the Pi coding agent for long-running autonomous browser-game development runs.
 
-[![Deploy Game](https://github.com/BlazeStorm001/game-harness/actions/workflows/pages.yml/badge.svg)](https://github.com/BlazeStorm001/game-harness/actions/workflows/pages.yml)
+[![Deploy Game](https://github.com/BlazeStorm001/gameruns-lite/actions/workflows/pages.yml/badge.svg)](https://github.com/BlazeStorm001/gameruns-lite/actions/workflows/pages.yml)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 ## Why
@@ -16,10 +16,10 @@ https://github.com/user-attachments/assets/13a52784-d0fe-40f3-91c3-5eb003e6f420
 
 | Scenario | Model | Outcome | Details | Trace |
 | --- | --- | --- | --- | --- |
-| NEON BREACH | Qwen3.8-27B | Complete, playable game | [Case study](examples/neon-breach/qwen3.8-27b/README.md) | [Trace](https://blazestorm001.github.io/game-harness/traces/qwen3.8-27b.html) |
-| NEON BREACH | Gemma 4 26B A4B | Incomplete game | [Evaluation](examples/neon-breach/gemma4-26b-a4b/README.md) | [Trace](https://blazestorm001.github.io/game-harness/traces/gemma4-26b-a4b.html) |
+| NEON BREACH | Qwen3.8-27B | Complete, playable game | [Case study](examples/neon-breach/qwen3.8-27b/README.md) | [Trace](https://blazestorm001.github.io/gameruns-lite/traces/qwen3.8-27b.html) |
+| NEON BREACH | Gemma 4 26B A4B | Incomplete game | [Evaluation](examples/neon-breach/gemma4-26b-a4b/README.md) | [Trace](https://blazestorm001.github.io/gameruns-lite/traces/gemma4-26b-a4b.html) |
 
-[Play the Qwen-generated NEON BREACH game](https://blazestorm001.github.io/game-harness/).
+[Play the Qwen-generated NEON BREACH game](https://blazestorm001.github.io/gameruns-lite/).
 
 ## Quick start
 
@@ -27,7 +27,7 @@ Requires Linux or WSL2, Node.js 22.19+, npm, Bash, Git, `curl`, `jq`, `rg`,
 GNU `timeout`, and `realpath`. Use a model that supports images and tool calls.
 
 ```bash
-git clone https://github.com/BlazeStorm001/game-harness.git gameruns-lite
+git clone https://github.com/BlazeStorm001/gameruns-lite.git
 cd gameruns-lite
 ./harness/scripts/setup.sh --install
 ./harness/scripts/setup.sh --check

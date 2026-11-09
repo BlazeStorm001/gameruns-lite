@@ -64,4 +64,4 @@ and Level 1 rendering. It does not establish a working complete game.
 
 The complete session is available in the local
 [`traces.html`](traces.html) export and as a published
-[Gemma 4 trace](https://blazestorm001.github.io/game-harness/traces/gemma4-26b-a4b.html).
+[Gemma 4 trace](https://blazestorm001.github.io/gameruns-lite/traces/gemma4-26b-a4b.html).

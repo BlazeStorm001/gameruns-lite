@@ -75,4 +75,4 @@ Run the evaluation with:
 ## Agent Trace
 
 The complete session is available as an interactive
-[agent trace](https://blazestorm001.github.io/game-harness/traces/qwen3.8-27b.html).
+[agent trace](https://blazestorm001.github.io/gameruns-lite/traces/qwen3.8-27b.html).
