@@ -218,7 +218,6 @@ jq -n \
   --arg scenarioName "$scenario_name" \
   --arg piVersion "$($pi_bin --version)" \
   --arg playwrightVersion "$(node -p "require('$harness_root/node_modules/@playwright/test/package.json').version")" \
-  --arg piMcpVersion "$(jq -r '.version' "$harness_root/.runtime/pi-agent/npm/node_modules/pi-mcp-extension/package.json")" \
   --argjson resumed "$resume" \
   --arg requestedTimeBudget "$time_budget" \
   --arg requestedTurnBudget "$turn_budget" \
@@ -228,8 +227,8 @@ jq -n \
     requestedTimeBudget: $requestedTimeBudget, requestedTurnBudget: $requestedTurnBudget,
     requestedFinalBudget: $requestedFinalBudget, modelReference: $modelReference,
     sessionDirectory: $sessionDirectory, scenario: {name: $scenarioName},
-    versions: {pi: $piVersion, playwright: $playwrightVersion,
-      piMcpExtension: $piMcpVersion},
+    versions: {pi: $piVersion, playwright: $playwrightVersion},
+    mcp: "builtin:mcp",
     invocations: []}' > "$metadata"
 
 session_id() {

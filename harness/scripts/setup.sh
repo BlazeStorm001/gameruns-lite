@@ -8,7 +8,6 @@ pi_bin="$harness_root/node_modules/.bin/pi"
 playwright_bin="$harness_root/node_modules/@playwright/test/cli.js"
 
 pi_version="1.5.0"
-pi_mcp_source="npm:pi-mcp-extension@1.5.0"
 
 usage() {
   cat <<EOF
@@ -57,29 +56,6 @@ check_installation() {
     return 1
   }
 
-  settings="$agent_dir/settings.json"
-  [[ -f "$settings" ]] || {
-    echo "Isolated Pi packages are not installed." >&2
-    echo "Run: ./harness/scripts/setup.sh --install" >&2
-    return 1
-  }
-
-  jq -e --arg mcp "$pi_mcp_source" \
-    '(.packages // []) | index($mcp) != null' \
-    "$settings" >/dev/null || {
-      echo "Pinned Pi packages are missing." >&2
-      echo "Run: ./harness/scripts/setup.sh --install" >&2
-      return 1
-    }
-
-  mcp_package="$agent_dir/npm/node_modules/pi-mcp-extension/package.json"
-  [[ -f "$mcp_package" ]] && \
-    [[ "$(jq -r '.version' "$mcp_package")" == "1.5.0" ]] || {
-      echo "The pinned pi-mcp-extension package is missing." >&2
-      echo "Run: ./harness/scripts/setup.sh --install" >&2
-      return 1
-    }
-
   cd "$harness_root"
   if ! node --input-type=module <<'NODE'
 import { chromium } from "@playwright/test";
@@ -109,6 +85,4 @@ cd "$harness_root"
 npm ci
 
 node "$playwright_bin" install chromium
-"$pi_bin" install "$pi_mcp_source" --no-approve
-
 check_installation
