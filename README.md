@@ -16,7 +16,7 @@
 <p align="center">
   <a href="#quick-start">Quick start</a> &middot;
   <a href="#model-setup">Model setup</a> &middot;
-  <a href="#evaluations">Evaluations</a>
+  <a href="#runs">Evaluations</a>
 </p>
 
 ## Why
