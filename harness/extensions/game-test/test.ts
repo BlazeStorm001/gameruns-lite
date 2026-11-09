@@ -6,7 +6,7 @@ import { join } from "node:path";
 
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { chromium, type Browser, type Page } from "playwright";
+import { chromium, type Browser, type Page } from "@playwright/test";
 import type { ExtensionAPI, ExtensionToolContext, ToolDefinition } from "@earendil-works/pi-coding-agent";
 
 import extension from "./index.ts";

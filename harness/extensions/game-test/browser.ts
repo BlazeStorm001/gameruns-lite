@@ -1,4 +1,4 @@
-import type { Browser, Page } from "playwright";
+import type { Browser, Page } from "@playwright/test";
 import { access } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -36,7 +36,7 @@ function harnessRoot(cwd: string) {
 
 async function loadChromium(cwd: string) {
   const root = harnessRoot(cwd);
-  const entry = resolve(root, "node_modules/playwright/index.mjs");
+  const entry = resolve(root, "node_modules/@playwright/test/index.mjs");
   await access(entry).catch(() => {
     throw new Error(
       `Playwright is not installed in ${root}. Run harness/scripts/setup.sh --install first.`,

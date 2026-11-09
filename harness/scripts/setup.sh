@@ -5,7 +5,7 @@ harness_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 runtime_root="$harness_root/.runtime"
 agent_dir="$runtime_root/pi-agent"
 pi_bin="$harness_root/node_modules/.bin/pi"
-playwright_bin="$harness_root/node_modules/.bin/playwright"
+playwright_bin="$harness_root/node_modules/@playwright/test/cli.js"
 
 pi_version="1.5.0"
 pi_mcp_source="npm:pi-mcp-extension@1.5.0"
@@ -46,7 +46,7 @@ export PI_TELEMETRY=0
 export GIT_TERMINAL_PROMPT=0
 
 check_installation() {
-  [[ -x "$pi_bin" && -x "$playwright_bin" ]] || {
+  [[ -x "$pi_bin" && -f "$playwright_bin" ]] || {
     echo "Harness dependencies are not installed." >&2
     echo "Run: ./harness/scripts/setup.sh --install" >&2
     return 1
@@ -92,7 +92,7 @@ await browser.close();
 NODE
   then
     echo "Chromium could not start. Install its Linux system dependencies with:" >&2
-    echo "  sudo $playwright_bin install-deps chromium" >&2
+    echo "  sudo node \"$playwright_bin\" install-deps chromium" >&2
     return 1
   fi
 
@@ -108,7 +108,7 @@ mkdir -p "$runtime_root" "$agent_dir"
 cd "$harness_root"
 npm ci
 
-"$playwright_bin" install chromium
+node "$playwright_bin" install chromium
 "$pi_bin" install "$pi_mcp_source" --no-approve
 
 check_installation

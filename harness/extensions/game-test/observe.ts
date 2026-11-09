@@ -1,5 +1,5 @@
 import type { AgentToolResult } from "@earendil-works/pi-coding-agent";
-import type { Page } from "playwright";
+import type { Page } from "@playwright/test";
 
 import type { createBrowserSession } from "./browser.ts";
 
