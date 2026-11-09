@@ -22,7 +22,11 @@
 ## Why
 
 Evaluating whether a model can do long-horizon, tool-using work requires a stable agent, a real browser, and sessions that survive hours of autonomous turns. This harness provides that setup.
-https://github.com/user-attachments/assets/13a52784-d0fe-40f3-91c3-5eb003e6f420
+
+
+https://github.com/user-attachments/assets/a9b4eb13-2b91-45b8-970f-b1507fd1290f
+
+
 
 ## Runs
 
