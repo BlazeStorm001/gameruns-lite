@@ -314,7 +314,9 @@ run_prompt() {
 
   echo "Invocation $invocation: $phase ($seconds second limit)"
   set +e
-  timeout --signal=INT --kill-after=180s "${seconds}s" "${args[@]}" 2>&1 | tee "$log_file"
+  timeout --signal=INT --kill-after=180s "${seconds}s" "${args[@]}" |
+    tee "$log_file" |
+    jq --unbuffered --join-output -f "$harness_root/scripts/render-pi-output.jq"
   process_status=${PIPESTATUS[0]}
   set -e
 
