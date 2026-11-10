@@ -312,7 +312,7 @@ run_prompt() {
     args+=(--continue "$prompt")
   fi
 
-  echo "Invocation $invocation: $phase ($seconds second limit)"
+  echo "Invocation $invocation: $phase"
   set +e
   timeout --signal=INT --kill-after=180s "${seconds}s" "${args[@]}" |
     tee "$log_file" |
