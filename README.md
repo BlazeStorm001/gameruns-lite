@@ -11,6 +11,7 @@
 <p align="center">
   <a href="https://github.com/BlazeStorm001/gameruns-lite/actions/workflows/pages.yml"><img src="https://github.com/BlazeStorm001/gameruns-lite/actions/workflows/pages.yml/badge.svg" alt="Deploy Game"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-Apache_2.0-blue.svg" alt="Apache 2.0 license"></a>
+  <a href="https://github.com/BlazeStorm001/gameruns-lite/stargazers"><img src="https://img.shields.io/github/stars/BlazeStorm001/gameruns-lite?style=social" alt="Star GameRuns Lite on GitHub"></a>
 </p>
 
 <p align="center">
@@ -176,6 +177,16 @@ Optional integrations:
 ## Contributing
 
 Open an issue for problems and ideas; pull requests are welcome.
+
+<p align="center">
+  <a href="https://github.com/BlazeStorm001/gameruns-lite">
+    <img src="https://img.shields.io/badge/%E2%AD%90_Star_this_repo-if_it_helped_you-ffd700?style=for-the-badge&labelColor=1f1f1f" alt="Star this repo if it helped you">
+  </a>
+</p>
+
+<p align="center">
+  <sub>If GameRuns Lite saved you some time, a star helps other people find it. Thank you! 💛</sub>
+</p>
 
 ## License
 
